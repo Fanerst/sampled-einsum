@@ -1,0 +1,7 @@
+30 qubits, 1106 one-qubit and 164 two-qubit gates
+224 nodes, 388 labels
+order found in 14.2 s; sliced bonds: {}
+tree complexity (tc log10, sc log2, ...): (np.float64(11.679351471014803), np.float64(30.0), np.float64(10.475448625364724))
+artensor sparse-state: plan 0.39 s, contraction 72.59 s (torch 2.9.1+cu128, CPU, 16 threads)
+artensor vs reference: fidelity 1.000000052372, max |diff| / max |ref| = 1.27e-05
+wrote n30m14/network.json and tensors.bin

@@ -1,0 +1,24 @@
+[package]
+name = "sampled-einsum"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.96"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Prototype of a sampled einsum (sparse-state contraction) on tenferro, for tensor4all/tenferro-rs#2675"
+repository = "https://github.com/Fanerst/sampled-einsum"
+
+# tenferro-rs is pinned to the commit tensor4all/tenferro-rs#2675 links to. Cargo.lock started
+# from tenferro-rs's own lock file, so strided, tcontract and threadteam match tenferro's build.
+[dependencies]
+tenferro-tensor = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308" }
+tenferro-runtime = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308" }
+tenferro-cpu = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308" }
+tenferro-ad = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308" }
+tenferro-einsum = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308", features = ["autodiff"] }
+num-complex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+rand = "0.8"
