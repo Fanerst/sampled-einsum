@@ -16,9 +16,15 @@ tenferro-runtime = { git = "https://github.com/tensor4all/tenferro-rs", rev = "8
 tenferro-cpu = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308" }
 tenferro-ad = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308" }
 tenferro-einsum = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308", features = ["autodiff"] }
+tenferro-gpu = { git = "https://github.com/tensor4all/tenferro-rs", rev = "80ee07269e1db81bc5cc4730eaaee0b606f73308", optional = true }
 num-complex = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[features]
+# CUDA execution: the `cuda` device of examples/circuit_amplitudes.rs and tests/cuda.rs. At run
+# time it needs an NVIDIA driver, CUDA 12 runtime libraries and cuTENSOR (see the README).
+cuda = ["dep:tenferro-gpu", "tenferro-gpu/cuda", "tenferro-einsum/cuda", "tenferro-ad/cuda"]
 
 [dev-dependencies]
 rand = "0.8"

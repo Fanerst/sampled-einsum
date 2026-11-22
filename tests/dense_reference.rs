@@ -6,67 +6,14 @@ use std::collections::HashMap;
 
 use num_complex::Complex64;
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use sampled_einsum::{plan, ConcreteOps, Network, PlanOptions, Samples, StepKind};
 use tenferro_cpu::CpuEngine;
-use tenferro_einsum::{EinsumOps, EinsumSubscripts};
-use tenferro_tensor::Tensor;
+use tenferro_tensor::TensorValue;
 
-use common::{random_case, select_dense, Case};
+use common::{dense, operands_c64, operands_f64, options, random_case, select_dense, Case};
 
 type Result<T> = sampled_einsum::Result<T>;
-
-fn options() -> Vec<(&'static str, PlanOptions)> {
-    vec![
-        ("default", PlanOptions::default()),
-        (
-            "pairs, tiny chunks",
-            PlanOptions {
-                max_chunk_elems: 3,
-                outer_select_ratio: 0.0,
-            },
-        ),
-        (
-            "outer select",
-            PlanOptions {
-                max_chunk_elems: usize::MAX,
-                outer_select_ratio: 1e9,
-            },
-        ),
-    ]
-}
-
-fn operands_f64(rng: &mut StdRng, net: &Network) -> Result<Vec<Tensor>> {
-    net.inputs
-        .iter()
-        .map(|ls| {
-            let shape: Vec<usize> = ls.iter().map(|l| net.sizes[l]).collect();
-            let len = shape.iter().product();
-            let data: Vec<f64> = (0..len).map(|_| rng.gen_range(-1.0..1.0)).collect();
-            Ok(Tensor::from_vec_col_major(shape, data)?)
-        })
-        .collect()
-}
-
-fn operands_c64(rng: &mut StdRng, net: &Network) -> Result<Vec<Tensor>> {
-    net.inputs
-        .iter()
-        .map(|ls| {
-            let shape: Vec<usize> = ls.iter().map(|l| net.sizes[l]).collect();
-            let len = shape.iter().product();
-            let data: Vec<Complex64> = (0..len)
-                .map(|_| Complex64::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)))
-                .collect();
-            Ok(Tensor::from_vec_col_major(shape, data)?)
-        })
-        .collect()
-}
-
-fn dense(net: &Network, operands: &[Tensor], engine: &mut CpuEngine) -> Result<Tensor> {
-    let labels: Vec<&[u32]> = net.inputs.iter().map(Vec::as_slice).collect();
-    let refs: Vec<&Tensor> = operands.iter().collect();
-    Ok(refs.einsum(&EinsumSubscripts::new(&labels, &net.output), engine)?)
-}
 
 /// Run one case with every planner setting; return the step kinds seen.
 fn check_f64(case: &Case, rng: &mut StdRng, seen: &mut HashMap<String, usize>) -> Result<()> {
@@ -74,10 +21,13 @@ fn check_f64(case: &Case, rng: &mut StdRng, seen: &mut HashMap<String, usize>) -
     let operands = operands_f64(rng, &case.net)?;
     let full = dense(&case.net, &operands, &mut engine)?;
     let (shape, want) = select_dense(&case.net, &case.samples, full.as_slice::<f64>()?);
-    let refs: Vec<&Tensor> = operands.iter().collect();
+    let values: Vec<TensorValue> = operands.into_iter().map(TensorValue::from_tensor).collect();
+    let refs: Vec<&TensorValue> = values.iter().collect();
     for (name, opts) in options() {
         let p = plan(&case.net, &case.path, &case.samples, &opts)?;
-        let (y, stats) = p.execute(&mut ConcreteOps::new(&mut engine), &refs)?;
+        let mut ops = ConcreteOps::new(&mut engine);
+        let (y, stats) = p.execute(&mut ops, &refs)?;
+        let y = ops.to_tensor(y)?;
         assert_eq!(
             y.shape(),
             shape.as_slice(),
@@ -143,10 +93,13 @@ fn random_networks_c64_match_dense() -> Result<()> {
         let operands = operands_c64(&mut rng, &case.net)?;
         let full = dense(&case.net, &operands, &mut engine)?;
         let (shape, want) = select_dense(&case.net, &case.samples, full.as_slice::<Complex64>()?);
-        let refs: Vec<&Tensor> = operands.iter().collect();
+        let values: Vec<TensorValue> = operands.into_iter().map(TensorValue::from_tensor).collect();
+        let refs: Vec<&TensorValue> = values.iter().collect();
         for (name, opts) in options() {
             let p = plan(&case.net, &case.path, &case.samples, &opts)?;
-            let (y, _) = p.execute(&mut ConcreteOps::new(&mut engine), &refs)?;
+            let mut ops = ConcreteOps::new(&mut engine);
+            let (y, _) = p.execute(&mut ops, &refs)?;
+            let y = ops.to_tensor(y)?;
             assert_eq!(y.shape(), shape.as_slice(), "{name}");
             for (g, w) in y.as_slice::<Complex64>()?.iter().zip(&want) {
                 assert!(

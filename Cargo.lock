@@ -157,6 +157,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
+name = "cudarc"
+version = "0.19.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7359bf1de037ddada72729c3acec9b040f3468400c6e9e740b01ba0cd2e89562"
+dependencies = [
+ "libloading 0.9.1",
+]
+
+[[package]]
 name = "defer"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -399,6 +408,26 @@ name = "libc"
 version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
+
+[[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link 0.2.1",
+]
+
+[[package]]
+name = "libloading"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1832accd5a4ca2795ace4d05d15c4039be15b62d3b950eff99746a990e3cc10"
+dependencies = [
+ "cfg-if",
+ "windows-link 0.2.1",
+]
 
 [[package]]
 name = "libm"
@@ -806,6 +835,7 @@ dependencies = [
  "tenferro-ad",
  "tenferro-cpu",
  "tenferro-einsum",
+ "tenferro-gpu",
  "tenferro-runtime",
  "tenferro-tensor",
 ]
@@ -1032,6 +1062,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "t4a-cuda-kernels"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e240fd21fb450bd4d2df4ff4453cc51a5439512e2a15df127ed7260bb492a8da"
+
+[[package]]
+name = "t4a-cuda-runtime"
+version = "0.1.1"
+source = "git+https://github.com/tensor4all/t4a-gpu-backend?rev=147af9e03e5169ec7cef6f6d869e27ed70a43a05#147af9e03e5169ec7cef6f6d869e27ed70a43a05"
+dependencies = [
+ "cudarc",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "t4a-faer"
 version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1254,6 +1299,7 @@ dependencies = [
  "num-complex",
  "num-traits",
  "tenferro-cpu",
+ "tenferro-gpu",
  "tenferro-internal-extension-macros",
  "tenferro-internal-ops",
  "tenferro-runtime",
@@ -1330,8 +1376,29 @@ dependencies = [
  "tenferro-ad",
  "tenferro-cpu",
  "tenferro-cpu-basic",
+ "tenferro-gpu",
  "tenferro-internal-extension-macros",
  "tenferro-internal-ops",
+ "tenferro-runtime",
+ "tenferro-tensor",
+ "thiserror 2.0.21",
+ "tinyvec",
+]
+
+[[package]]
+name = "tenferro-gpu"
+version = "0.12.0"
+source = "git+https://github.com/tensor4all/tenferro-rs?rev=80ee07269e1db81bc5cc4730eaaee0b606f73308#80ee07269e1db81bc5cc4730eaaee0b606f73308"
+dependencies = [
+ "cudarc",
+ "libloading 0.8.9",
+ "num-complex",
+ "num-traits",
+ "strided-perm",
+ "t4a-cuda-kernels",
+ "t4a-cuda-runtime",
+ "tenferro-core-ops",
+ "tenferro-cpu",
  "tenferro-runtime",
  "tenferro-tensor",
  "thiserror 2.0.21",

@@ -3,10 +3,74 @@
 
 use std::collections::HashMap;
 
+use num_complex::Complex64;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
-use sampled_einsum::{Network, Samples};
+use sampled_einsum::{Network, PlanOptions, Samples};
+use tenferro_cpu::CpuEngine;
+use tenferro_einsum::{EinsumOps, EinsumSubscripts};
+use tenferro_tensor::Tensor;
+
+/// The three planner settings every random case runs under.
+pub fn options() -> Vec<(&'static str, PlanOptions)> {
+    vec![
+        ("default", PlanOptions::default()),
+        (
+            "pairs, tiny chunks",
+            PlanOptions {
+                max_chunk_elems: 3,
+                outer_select_ratio: 0.0,
+            },
+        ),
+        (
+            "outer select",
+            PlanOptions {
+                max_chunk_elems: usize::MAX,
+                outer_select_ratio: 1e9,
+            },
+        ),
+    ]
+}
+
+/// Random f64 operands for `net`, on the host.
+pub fn operands_f64(rng: &mut StdRng, net: &Network) -> sampled_einsum::Result<Vec<Tensor>> {
+    net.inputs
+        .iter()
+        .map(|ls| {
+            let shape: Vec<usize> = ls.iter().map(|l| net.sizes[l]).collect();
+            let len = shape.iter().product();
+            let data: Vec<f64> = (0..len).map(|_| rng.gen_range(-1.0..1.0)).collect();
+            Ok(Tensor::from_vec_col_major(shape, data)?)
+        })
+        .collect()
+}
+
+/// Random complex (f64 parts) operands for `net`, on the host.
+pub fn operands_c64(rng: &mut StdRng, net: &Network) -> sampled_einsum::Result<Vec<Tensor>> {
+    net.inputs
+        .iter()
+        .map(|ls| {
+            let shape: Vec<usize> = ls.iter().map(|l| net.sizes[l]).collect();
+            let len = shape.iter().product();
+            let data: Vec<Complex64> = (0..len)
+                .map(|_| Complex64::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)))
+                .collect();
+            Ok(Tensor::from_vec_col_major(shape, data)?)
+        })
+        .collect()
+}
+
+/// The dense einsum over `net.output`, on the CPU.
+pub fn dense(
+    net: &Network,
+    operands: &[Tensor],
+    engine: &mut CpuEngine,
+) -> sampled_einsum::Result<Tensor> {
+    let labels: Vec<&[u32]> = net.inputs.iter().map(Vec::as_slice).collect();
+    let refs: Vec<&Tensor> = operands.iter().collect();
+    Ok(refs.einsum(&EinsumSubscripts::new(&labels, &net.output), engine)?)
+}
 
 pub struct Case {
     pub net: Network,

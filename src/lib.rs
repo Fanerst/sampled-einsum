@@ -17,7 +17,7 @@
 //! use std::collections::HashMap;
 //! use sampled_einsum::{plan, ConcreteOps, Network, PlanOptions, Samples};
 //! use tenferro_cpu::CpuEngine;
-//! use tenferro_tensor::Tensor;
+//! use tenferro_tensor::{Tensor, TensorValue};
 //!
 //! // ij,jk->ik sampled at (i, k) = (0, 1) and (1, 2): SDDMM.
 //! let net = Network {
@@ -27,10 +27,12 @@
 //! };
 //! let samples = Samples { labels: vec![0, 2], n: 2, values: vec![0, 1, 1, 2] };
 //! let p = plan(&net, &[(0, 1)], &samples, &PlanOptions::default())?;
-//! let a = Tensor::from_vec_col_major(vec![2, 3], vec![1.0_f64; 6])?;
-//! let b = Tensor::from_vec_col_major(vec![3, 4], vec![1.0_f64; 12])?;
+//! let a = TensorValue::from_tensor(Tensor::from_vec_col_major(vec![2, 3], vec![1.0_f64; 6])?);
+//! let b = TensorValue::from_tensor(Tensor::from_vec_col_major(vec![3, 4], vec![1.0_f64; 12])?);
 //! let mut engine = CpuEngine::serial();
-//! let (y, _) = p.execute(&mut ConcreteOps::new(&mut engine), &[&a, &b])?;
+//! let mut ops = ConcreteOps::new(&mut engine);
+//! let (y, _) = p.execute(&mut ops, &[&a, &b])?;
+//! let y = ops.to_tensor(y)?;
 //! assert_eq!(y.shape(), &[2]);
 //! assert_eq!(y.as_slice::<f64>()?, &[3.0, 3.0]);
 //! # Ok::<(), sampled_einsum::Error>(())
